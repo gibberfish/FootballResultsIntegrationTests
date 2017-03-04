@@ -4,16 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import mindbadger.TestApplication;
-import mindbadger.football.domain.Team;
 import mindbadger.football.domain.DomainObjectFactory;
+import mindbadger.football.domain.Team;
 
+@SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class TeamRepositoryTest {
@@ -25,6 +28,13 @@ public class TeamRepositoryTest {
 
 	@Autowired
 	private DomainObjectFactory domainObjectFactory;
+
+	@Before
+	public void init() {
+		Team team = domainObjectFactory.createTeam(NEW_TEAM_NAME);
+		team = teamRepository.findMatching(team);
+		if (team != null) teamRepository.delete(team);
+	}
 
 	@Test
 	public void testTeamRepository() {
@@ -44,6 +54,7 @@ public class TeamRepositoryTest {
 		// Save the new domain object
 		team = teamRepository.save(newTeam);
 		assertNotNull(team);
+		assertNotNull(team.getTeamId());
 		assertEquals (NEW_TEAM_NAME, team.getTeamName());
 
 		// Attempt to find a team matching the now-persisted domain object

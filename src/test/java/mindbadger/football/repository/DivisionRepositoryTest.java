@@ -4,9 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -14,6 +16,7 @@ import mindbadger.TestApplication;
 import mindbadger.football.domain.Division;
 import mindbadger.football.domain.DomainObjectFactory;
 
+@SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class DivisionRepositoryTest {
@@ -26,6 +29,13 @@ public class DivisionRepositoryTest {
 	@Autowired
 	private DomainObjectFactory domainObjectFactory;
 
+	@Before
+	public void init() {
+		Division division = domainObjectFactory.createDivision(NEW_DIVISION_NAME);
+		division = divisionRepository.findMatching(division);
+		if (division != null ) divisionRepository.delete(division);
+	}
+	
 	@Test
 	public void testDivisionRepository() {
 		// Attempt to find a division with a null ID
@@ -44,6 +54,7 @@ public class DivisionRepositoryTest {
 		// Save the new domain object
 		division = divisionRepository.save(newDivision);
 		assertNotNull(division);
+		assertNotNull(division.getDivisionId());
 		assertEquals (NEW_DIVISION_NAME, division.getDivisionName());
 
 		// Attempt to find a division matching the now-persisted domain object
