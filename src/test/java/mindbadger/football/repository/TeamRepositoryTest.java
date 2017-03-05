@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +21,8 @@ import mindbadger.football.domain.Team;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class TeamRepositoryTest {
-	private static final String NEW_TEAM_NAME = "New Team";
+	private static final String NEW_TEAM1_NAME = "New Team 1";
+	private static final String NEW_TEAM2_NAME = "New Team 2";
 	private static final String INVALID_ID = "INVALID_ID";
 
 	@Autowired
@@ -29,48 +31,126 @@ public class TeamRepositoryTest {
 	@Autowired
 	private DomainObjectFactory domainObjectFactory;
 
+	@After
 	@Before
-	public void init() {
-		Team team = domainObjectFactory.createTeam(NEW_TEAM_NAME);
+	public void ensureAnyRemainingTestDataIsClearedBeforeTestsRun() {
+		Team team = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
 		team = teamRepository.findMatching(team);
 		if (team != null) teamRepository.delete(team);
 	}
 
 	@Test
-	public void testTeamRepository() {
-		// Attempt to find a team with a null ID
+	public void findOneShouldReturnNullIfANullIdIsPassedIn () {
+		// When
 		Team team = teamRepository.findOne(null);
-		assertNull(team);
-
-		// Attempt to find a team with an ID that doesn't exist
-		team = teamRepository.findOne(INVALID_ID);
-		assertNull(team);
 		
-		// Attempt to find a team matching a non-persisted domain object
-		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM_NAME);
-		team = teamRepository.findMatching(newTeam);
+		// Then
 		assertNull(team);
-
-		// Save the new domain object
-		team = teamRepository.save(newTeam);
+	}
+	
+	@Test
+	public void findOneShouldReturnNullIfANonExistentIdIsPassedIn () {
+		// When
+		Team team = teamRepository.findOne(INVALID_ID);
+		
+		// Then
+		assertNull(team);
+	}
+	
+	@Test
+	public void findMatchingShouldReturnNullIfANonPersistedObjectIsPassedIn () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		
+		// When
+		Team team = teamRepository.findMatching(newTeam);
+		
+		// Then
+		assertNull(team);
+	}
+	
+	@Test
+	public void saveShouldPersistANewObject () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		
+		// When
+		Team team = teamRepository.save(newTeam);
+		
+		// Then
 		assertNotNull(team);
 		assertNotNull(team.getTeamId());
-		assertEquals (NEW_TEAM_NAME, team.getTeamName());
-
-		// Attempt to find a team matching the now-persisted domain object
-		team = teamRepository.findMatching(newTeam);
-		assertEquals (NEW_TEAM_NAME, team.getTeamName());
-		assertNotNull(team.getTeamId());
+		assertEquals (NEW_TEAM1_NAME, team.getTeamName());
+	}
+	
+	@Test
+	public void findAllShouldReturnAllPersistedObjects () {
+		// Given
+		teamRepository.save(domainObjectFactory.createTeam(NEW_TEAM1_NAME));
+		teamRepository.save(domainObjectFactory.createTeam(NEW_TEAM2_NAME));
 		
-		// Attempt to find a team using the ID of the newly persisted domain object
+		// When
+		Iterable<Team> teams = teamRepository.findAll();
+		
+		// Then
+		assertEquals (2, teams.spliterator().estimateSize());
+	}
+	
+	@Test
+	public void createOrUpdateShouldPersistANewObject () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		
+		// When
+		Team team = teamRepository.createOrUpdate(newTeam);
+		
+		// Then
+		assertNotNull(team);
+		assertNotNull(team.getTeamId());
+		assertEquals (NEW_TEAM1_NAME, team.getTeamName());
+	}
+	
+	@Test
+	public void findMatchingShouldReturnAMatchingPersistedObject () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		Team team = teamRepository.save(newTeam);
+		
+		// When
+		team = teamRepository.findMatching(newTeam);
+		
+		// Then
+		assertEquals (NEW_TEAM1_NAME, team.getTeamName());
+		assertNotNull(team.getTeamId());
+	}
+	
+	@Test
+	public void findOneShouldReturnAMatchingPersistedObject () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		Team team = teamRepository.save(newTeam);
 		String newTeamId = team.getTeamId();
-		team = teamRepository.findOne(newTeamId);
-		assertNotNull(team);
-		assertEquals (NEW_TEAM_NAME, team.getTeamName());
-		assertEquals (newTeamId, team.getTeamId());
 		
-		// Delete the domain object and check it can no longer be retrieved
+		// When
+		team = teamRepository.findOne(newTeamId);
+		
+		// Then
+		assertNotNull(team);
+		assertEquals (NEW_TEAM1_NAME, team.getTeamName());
+		assertEquals (newTeamId, team.getTeamId());
+	}
+	
+	@Test
+	public void deleteShouldRemoveATeam () {
+		// Given
+		Team newTeam = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		Team team = teamRepository.save(newTeam);
+		String newTeamId = team.getTeamId();
+		
+		// When
 		teamRepository.delete(team);
+		
+		// Then
 		team = teamRepository.findOne(newTeamId);
 		assertNull(team);
 	}

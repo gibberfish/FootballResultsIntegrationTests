@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +21,8 @@ import mindbadger.football.domain.DomainObjectFactory;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class DivisionRepositoryTest {
-	private static final String NEW_DIVISION_NAME = "New Division";
+	private static final String NEW_DIVISION1_NAME = "New Division 1";
+	private static final String NEW_DIVISION2_NAME = "New Division 2";
 	private static final String INVALID_ID = "INVALID_ID";
 
 	@Autowired
@@ -29,48 +31,126 @@ public class DivisionRepositoryTest {
 	@Autowired
 	private DomainObjectFactory domainObjectFactory;
 
+	@After
 	@Before
-	public void init() {
-		Division division = domainObjectFactory.createDivision(NEW_DIVISION_NAME);
+	public void ensureAnyRemainingTestDataIsClearedBeforeTestsRun() {
+		Division division = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
 		division = divisionRepository.findMatching(division);
 		if (division != null ) divisionRepository.delete(division);
 	}
 	
 	@Test
-	public void testDivisionRepository() {
-		// Attempt to find a division with a null ID
+	public void findOneShouldReturnNullIfANullIdIsPassedIn () {
+		// When
 		Division division = divisionRepository.findOne(null);
-		assertNull(division);
-
-		// Attempt to find a division with an ID that doesn't exist
-		division = divisionRepository.findOne(INVALID_ID);
-		assertNull(division);
 		
-		// Attempt to find a division matching a non-persisted domain object
-		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION_NAME);
-		division = divisionRepository.findMatching(newDivision);
+		// Then
 		assertNull(division);
-
-		// Save the new domain object
-		division = divisionRepository.save(newDivision);
+	}
+	
+	@Test
+	public void findOneShouldReturnNullIfANonExistentIdIsPassedIn () {
+		// When
+		Division division = divisionRepository.findOne(INVALID_ID);
+		
+		// Then
+		assertNull(division);
+	}
+	
+	@Test
+	public void findMatchingShouldReturnNullIfANonPersistedObjectIsPassedIn () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		
+		// When
+		Division division = divisionRepository.findMatching(newDivision);
+		
+		// Then
+		assertNull(division);
+	}
+	
+	@Test
+	public void saveShouldPersistANewObject () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		
+		// When
+		Division division = divisionRepository.save(newDivision);
+		
+		// Then
 		assertNotNull(division);
 		assertNotNull(division.getDivisionId());
-		assertEquals (NEW_DIVISION_NAME, division.getDivisionName());
-
-		// Attempt to find a division matching the now-persisted domain object
-		division = divisionRepository.findMatching(newDivision);
-		assertEquals (NEW_DIVISION_NAME, division.getDivisionName());
-		assertNotNull(division.getDivisionId());
+		assertEquals (NEW_DIVISION1_NAME, division.getDivisionName());
+	}
+	
+	@Test
+	public void findAllShouldReturnAllPersistedObjects () {
+		// Given
+		divisionRepository.save(domainObjectFactory.createDivision(NEW_DIVISION1_NAME));
+		divisionRepository.save(domainObjectFactory.createDivision(NEW_DIVISION2_NAME));
 		
-		// Attempt to find a division using the ID of the newly persisted domain object
+		// When
+		Iterable<Division> divisions = divisionRepository.findAll();
+		
+		// Then
+		assertEquals (2, divisions.spliterator().estimateSize());
+	}
+	
+	@Test
+	public void createOrUpdateShouldPersistANewObject () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		
+		// When
+		Division division = divisionRepository.createOrUpdate(newDivision);
+		
+		// Then
+		assertNotNull(division);
+		assertNotNull(division.getDivisionId());
+		assertEquals (NEW_DIVISION1_NAME, division.getDivisionName());
+	}
+	
+	@Test
+	public void findMatchingShouldReturnAMatchingPersistedObject () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		Division division = divisionRepository.save(newDivision);
+		
+		// When
+		division = divisionRepository.findMatching(newDivision);
+		
+		// Then
+		assertEquals (NEW_DIVISION1_NAME, division.getDivisionName());
+		assertNotNull(division.getDivisionId());
+	}
+	
+	@Test
+	public void findOneShouldReturnAMatchingPersistedObject () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		Division division = divisionRepository.save(newDivision);
 		String newDivisionId = division.getDivisionId();
-		division = divisionRepository.findOne(newDivisionId);
-		assertNotNull(division);
-		assertEquals (NEW_DIVISION_NAME, division.getDivisionName());
-		assertEquals (newDivisionId, division.getDivisionId());
 		
-		// Delete the domain object and check it can no longer be retrieved
+		// When
+		division = divisionRepository.findOne(newDivisionId);
+		
+		// Then
+		assertNotNull(division);
+		assertEquals (NEW_DIVISION1_NAME, division.getDivisionName());
+		assertEquals (newDivisionId, division.getDivisionId());
+	}
+	
+	@Test
+	public void deleteShouldRemoveADivision () {
+		// Given
+		Division newDivision = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		Division division = divisionRepository.save(newDivision);
+		String newDivisionId = division.getDivisionId();
+		
+		// When
 		divisionRepository.delete(division);
+		
+		// Then
 		division = divisionRepository.findOne(newDivisionId);
 		assertNull(division);
 	}
