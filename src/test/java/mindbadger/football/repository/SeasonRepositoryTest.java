@@ -108,8 +108,6 @@ public class SeasonRepositoryTest {
 		assertEquals (2, seasons.spliterator().estimateSize());		
 	}
 
-	//TODO Currently this method fails because the ID and the 
-	@Ignore
 	@Test
 	public void createOrUpdateShouldPersistANewObject () {
 		Season newSeason = domainObjectFactory.createSeason(NEW_SEASON_NUMBER);
