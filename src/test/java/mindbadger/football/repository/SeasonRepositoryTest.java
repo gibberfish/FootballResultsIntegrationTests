@@ -29,10 +29,10 @@ public class SeasonRepositoryTest {
 	private static final Integer NEW_SEASON_NUMBER = 1850;
 	private static final Integer SECOND_SEASON_NUMBER = 1851;
 	private static final Integer INVALID_ID = -1;
-	private static final String TEAM_NAME_1 = "New Team 1";
-	private static final String TEAM_NAME_2 = "New Team 2";
-	private static final String DIV_NAME_1 = "New Division 1";
-	private static final String DIV_NAME_2 = "New Division 2";
+	private static final String TEAM_NAME_1 = "Season Test New Team 1";
+	private static final String TEAM_NAME_2 = "Season Test New Team 2";
+	private static final String DIV_NAME_1 = "Season Test New Division 1";
+	private static final String DIV_NAME_2 = "Season Test New Division 2";
 
 	@Autowired
 	private SeasonRepository seasonRepository;
@@ -49,9 +49,12 @@ public class SeasonRepositoryTest {
 	@After
 	@Before
 	public void ensureAnyRemainingTestDataIsClearedBeforeTestsRun() {
-		Season season = seasonRepository.findOne(1850);
+		Season season = seasonRepository.findOne(NEW_SEASON_NUMBER);
 		if (season != null) seasonRepository.delete(season);
-		
+
+		season = seasonRepository.findOne(SECOND_SEASON_NUMBER);
+		if (season != null) seasonRepository.delete(season);
+
 		Division division = domainObjectFactory.createDivision(DIV_NAME_1);
 		division = divisionRepository.findMatching(division);
 		if (division != null ) divisionRepository.delete(division);

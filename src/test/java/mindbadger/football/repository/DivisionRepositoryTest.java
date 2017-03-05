@@ -19,8 +19,8 @@ import mindbadger.football.domain.DomainObjectFactory;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class DivisionRepositoryTest {
-	private static final String NEW_DIVISION1_NAME = "New Division 1";
-	private static final String NEW_DIVISION2_NAME = "New Division 2";
+	private static final String NEW_DIVISION1_NAME = "Division Test New Division 1";
+	private static final String NEW_DIVISION2_NAME = "Division Test New Division 2";
 	private static final String INVALID_ID = "INVALID_ID";
 
 	@Autowired
@@ -33,6 +33,10 @@ public class DivisionRepositoryTest {
 	@Before
 	public void ensureAnyRemainingTestDataIsClearedBeforeTestsRun() {
 		Division division = domainObjectFactory.createDivision(NEW_DIVISION1_NAME);
+		division = divisionRepository.findMatching(division);
+		if (division != null ) divisionRepository.delete(division);
+		
+		division = domainObjectFactory.createDivision(NEW_DIVISION2_NAME);
 		division = divisionRepository.findMatching(division);
 		if (division != null ) divisionRepository.delete(division);
 	}

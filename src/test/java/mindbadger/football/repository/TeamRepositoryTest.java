@@ -19,8 +19,8 @@ import mindbadger.football.domain.Team;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
 public class TeamRepositoryTest {
-	private static final String NEW_TEAM1_NAME = "New Team 1";
-	private static final String NEW_TEAM2_NAME = "New Team 2";
+	private static final String NEW_TEAM1_NAME = "Team Test New Team 1";
+	private static final String NEW_TEAM2_NAME = "Team Test New Team 2";
 	private static final String INVALID_ID = "INVALID_ID";
 
 	@Autowired
@@ -33,6 +33,10 @@ public class TeamRepositoryTest {
 	@Before
 	public void ensureAnyRemainingTestDataIsClearedBeforeTestsRun() {
 		Team team = domainObjectFactory.createTeam(NEW_TEAM1_NAME);
+		team = teamRepository.findMatching(team);
+		if (team != null) teamRepository.delete(team);
+
+		team = domainObjectFactory.createTeam(NEW_TEAM2_NAME);
 		team = teamRepository.findMatching(team);
 		if (team != null) teamRepository.delete(team);
 	}
