@@ -1,13 +1,16 @@
 package mindbadger.football.repository;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Calendar;
 import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +27,6 @@ import mindbadger.football.domain.SeasonDivision;
 import mindbadger.football.domain.SeasonDivisionTeam;
 import mindbadger.football.domain.Team;
 
-@FixMethodOrder
 @SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestApplication.class})
@@ -36,6 +38,8 @@ public class FixtureRepositoryTest {
 	private static final String TEAM2_NAME = "Fixture Test Team Name 2";
 	private static final String TEAM3_NAME = "Fixture Test Team Name 3";
 	private static final String TEAM4_NAME = "Fixture Test Team Name 4";
+	private static final String TEAM5_NAME = "Fixture Test Team Name 5";
+	private static final String TEAM6_NAME = "Fixture Test Team Name 6";
 
 	private Season season;
 	private Division division;
@@ -43,6 +47,8 @@ public class FixtureRepositoryTest {
 	private Team awayTeam1;
 	private Team homeTeam2;
 	private Team awayTeam2;
+	private Team homeTeam3;
+	private Team awayTeam3;
 	
 	@Autowired
 	private SeasonRepository seasonRepository;
@@ -69,6 +75,10 @@ public class FixtureRepositoryTest {
 		fixture = fixtureRepository.findMatching(fixture);
 		if (fixture != null) fixtureRepository.delete(fixture);
 
+		fixture = domainObjectFactory.createFixture(season, homeTeam3, awayTeam3);
+		fixture = fixtureRepository.findMatching(fixture);
+		if (fixture != null) fixtureRepository.delete(fixture);
+
 		Season season = seasonRepository.findOne(SEASON);
 		if (season != null) seasonRepository.delete(season);
 		
@@ -92,6 +102,13 @@ public class FixtureRepositoryTest {
 		team4 = teamRepository.findMatching(team4);
 		if (team4 != null) teamRepository.delete(team4);
 
+		Team team5 = domainObjectFactory.createTeam(TEAM5_NAME);
+		team5 = teamRepository.findMatching(team5);
+		if (team5 != null) teamRepository.delete(team5);
+
+		Team team6 = domainObjectFactory.createTeam(TEAM6_NAME);
+		team6 = teamRepository.findMatching(team6);
+		if (team6 != null) teamRepository.delete(team6);
 	}
 
 	@Before
@@ -102,6 +119,8 @@ public class FixtureRepositoryTest {
 		awayTeam1 = teamRepository.save(domainObjectFactory.createTeam(TEAM2_NAME));
 		homeTeam2 = teamRepository.save(domainObjectFactory.createTeam(TEAM3_NAME));
 		awayTeam2 = teamRepository.save(domainObjectFactory.createTeam(TEAM4_NAME));
+		homeTeam3 = teamRepository.save(domainObjectFactory.createTeam(TEAM5_NAME));
+		awayTeam3 = teamRepository.save(domainObjectFactory.createTeam(TEAM6_NAME));
 		
 		SeasonDivision seasonDivision = domainObjectFactory.createSeasonDivision(season, division, 1);
 		SeasonDivisionTeam seasonDivisionTeam1 = domainObjectFactory.createSeasonDivisionTeam(seasonDivision, homeTeam1);
@@ -289,18 +308,17 @@ public class FixtureRepositoryTest {
 	@Test
 	public void shouldGetFixturesForTeamInDivisionInSeason() {
 		// Given
-		Calendar fixtureDate = Calendar.getInstance();
 		Fixture fixture1 = domainObjectFactory.createFixture(season, homeTeam1, awayTeam1);
-		fixture1.setFixtureDate(fixtureDate);
+		fixture1.setDivision(division);
 		fixture1 = fixtureRepository.save(fixture1);
 		
 		Fixture fixture2 = fixtureRepository.save(domainObjectFactory.createFixture(season, homeTeam2, awayTeam2));
-		
+
+		Fixture fixture3 = domainObjectFactory.createFixture(season, homeTeam3, awayTeam3);
+		fixture3.setDivision(division);
+		fixture3 = fixtureRepository.save(fixture3);
+
 		SeasonDivision seasonDivision = season.getSeasonDivisions().iterator().next();
-		System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-		System.out.println(seasonDivision.getSeason());
-		System.out.println(seasonDivision.getDivision());
-		System.out.println(seasonDivision.getSeasonDivisionTeams().iterator().next().getTeam());
 		
 		// When
 		List<Fixture> fixturesForTeam1 = fixtureRepository.getFixturesForTeamInDivisionInSeason(seasonDivision, homeTeam1);
@@ -308,6 +326,110 @@ public class FixtureRepositoryTest {
 		// Then
 		assertTrue (fixturesForTeam1.contains(fixture1));
 		assertFalse (fixturesForTeam1.contains(fixture2));
+		assertFalse (fixturesForTeam1.contains(fixture3));
 	}
 
+	@Test
+	public void shouldGetFixturesForDivisionInSeason() {
+		// Given
+		Fixture fixture1 = domainObjectFactory.createFixture(season, homeTeam1, awayTeam1);
+		fixture1.setDivision(division);
+		fixture1 = fixtureRepository.save(fixture1);
+		
+		Fixture fixture2 = fixtureRepository.save(domainObjectFactory.createFixture(season, homeTeam2, awayTeam2));
+
+		Fixture fixture3 = domainObjectFactory.createFixture(season, homeTeam3, awayTeam3);
+		fixture3.setDivision(division);
+		fixture3 = fixtureRepository.save(fixture3);
+
+		SeasonDivision seasonDivision = season.getSeasonDivisions().iterator().next();
+		
+		// When
+		List<Fixture> fixturesForTeam1 = fixtureRepository.getFixturesForDivisionInSeason(seasonDivision);
+		
+		// Then
+		assertTrue (fixturesForTeam1.contains(fixture1));
+		assertFalse (fixturesForTeam1.contains(fixture2));
+		assertTrue (fixturesForTeam1.contains(fixture3));
+	}
+
+	@Test
+	public void shouldGetUnplayedFixturesBeforeToday() {
+		// Given
+		Calendar beforeToday = Calendar.getInstance();
+		beforeToday.set(2015, 4, 4);
+
+		Calendar afterToday = Calendar.getInstance();
+		afterToday.set(2040, 4, 4);
+
+		Fixture fixture1 = domainObjectFactory.createFixture(season, homeTeam1, awayTeam1);
+		fixture1.setFixtureDate(beforeToday);
+		fixture1 = fixtureRepository.save(fixture1);
+		
+		Fixture fixture2 = domainObjectFactory.createFixture(season, homeTeam2, awayTeam2);
+		fixture2.setFixtureDate(afterToday);
+		fixture2 = fixtureRepository.save(fixture2);
+
+		Fixture fixture3 = domainObjectFactory.createFixture(season, homeTeam3, awayTeam3);
+		fixture3.setFixtureDate(beforeToday);
+		fixture3.setHomeGoals(5);
+		fixture3.setAwayGoals(3);
+		fixture3 = fixtureRepository.save(fixture3);
+		
+		// When
+		List<Fixture> unplayedFixturesBeforeToday = fixtureRepository.getUnplayedFixturesBeforeToday();
+		
+		// Then
+		assertTrue (unplayedFixturesBeforeToday.contains(fixture1));
+		assertFalse (unplayedFixturesBeforeToday.contains(fixture2));
+		assertFalse (unplayedFixturesBeforeToday.contains(fixture3));
+	}
+
+	@Test
+	public void shouldGetExistingFixture() {
+		// Given
+		Fixture fixture1 = domainObjectFactory.createFixture(season, homeTeam1, awayTeam1);
+		fixture1 = fixtureRepository.save(fixture1);
+		
+		// When
+		Fixture fixture = fixtureRepository.getExistingFixture(season, homeTeam1, awayTeam1);
+		
+		// Then
+		assertNotNull (fixture);
+		assertEquals (season, fixture.getSeason());
+		assertEquals (homeTeam1, fixture.getHomeTeam());
+		assertEquals (awayTeam1, fixture.getAwayTeam());
+	}
+
+	@Test
+	public void shouldGetUnplayedFixturesOnDate() {
+		// Given
+		Calendar dateToFind = Calendar.getInstance();
+		dateToFind.set(2015, 4, 4);
+
+		Calendar anotherDate = Calendar.getInstance();
+		anotherDate.set(2040, 4, 4);
+
+		Fixture fixture1 = domainObjectFactory.createFixture(season, homeTeam1, awayTeam1);
+		fixture1.setFixtureDate(dateToFind);
+		fixture1 = fixtureRepository.save(fixture1);
+		
+		Fixture fixture2 = domainObjectFactory.createFixture(season, homeTeam2, awayTeam2);
+		fixture2.setFixtureDate(anotherDate);
+		fixture2 = fixtureRepository.save(fixture2);
+
+		Fixture fixture3 = domainObjectFactory.createFixture(season, homeTeam3, awayTeam3);
+		fixture3.setFixtureDate(dateToFind);
+		fixture3.setHomeGoals(5);
+		fixture3.setAwayGoals(3);
+		fixture3 = fixtureRepository.save(fixture3);
+		
+		// When
+		List<Fixture> unplayedFixturesBeforeToday = fixtureRepository.getUnplayedFixturesOnDate(dateToFind);
+		
+		// Then
+		assertTrue (unplayedFixturesBeforeToday.contains(fixture1));
+		assertFalse (unplayedFixturesBeforeToday.contains(fixture2));
+		assertFalse (unplayedFixturesBeforeToday.contains(fixture3));
+	}
 }
