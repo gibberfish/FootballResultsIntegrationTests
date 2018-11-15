@@ -1,4 +1,4 @@
-# FootballResultsRepositoryIntegrationTests
+# FootballResultsIntegrationTests
 
 To run the tests against the MySQL JPA implementation
 
